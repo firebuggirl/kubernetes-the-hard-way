@@ -1,23 +1,48 @@
 # Bootstrapping the Kubernetes Control Plane
 
+<<<<<<< HEAD
 In this lab you will bootstrap the Kubernetes control plane across 2 compute instances and configure it for high availability. You will also create an external load balancer that exposes the Kubernetes API Servers to remote clients. The following components will be installed on each node: Kubernetes API Server, Scheduler, and Controller Manager.
 
 ## Prerequisites
 
 The commands in this lab must be run on each controller instance: `master-1`, and `master-2`. Login to each controller instance using SSH Terminal. Example:
+=======
+In this lab you will bootstrap the Kubernetes control plane. The following components will be installed the controller machine: Kubernetes API Server, Scheduler, and Controller Manager.
 
-### Running commands in parallel with tmux
+## Prerequisites
 
-[tmux](https://github.com/tmux/tmux/wiki) can be used to run commands on multiple compute instances at the same time. See the [Running commands in parallel with tmux](01-prerequisites.md#running-commands-in-parallel-with-tmux) section in the Prerequisites lab.
+Copy Kubernetes binaries and systemd unit files to the `server` instance:
+
+```bash
+scp \
+  downloads/kube-apiserver \
+  downloads/kube-controller-manager \
+  downloads/kube-scheduler \
+  downloads/kubectl \
+  units/kube-apiserver.service \
+  units/kube-controller-manager.service \
+  units/kube-scheduler.service \
+  configs/kube-scheduler.yaml \
+  configs/kube-apiserver-to-kubelet.yaml \
+  root@server:~/
+```
+>>>>>>> upstream/master
+
+The commands in this lab must be run on the controller instance: `server`. Login to the controller instance using the `ssh` command. Example:
+
+```bash
+ssh root@server
+```
 
 ## Provision the Kubernetes Control Plane
 
 Create the Kubernetes configuration directory:
 
-```
-sudo mkdir -p /etc/kubernetes/config
+```bash
+mkdir -p /etc/kubernetes/config
 ```
 
+<<<<<<< HEAD
 ### Download and Install the Kubernetes Controller Binaries
 
 Download the official Kubernetes release binaries:
@@ -29,24 +54,34 @@ wget -q --show-progress --https-only --timestamping \
   "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kube-scheduler" \
   "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kubectl"
 ```
+=======
+### Install the Kubernetes Controller Binaries
+>>>>>>> upstream/master
 
 Reference: https://kubernetes.io/docs/setup/release/#server-binaries
 
 Install the Kubernetes binaries:
 
-```
+```bash
 {
-  chmod +x kube-apiserver kube-controller-manager kube-scheduler kubectl
-  sudo mv kube-apiserver kube-controller-manager kube-scheduler kubectl /usr/local/bin/
+  chmod +x kube-apiserver \
+    kube-controller-manager \
+    kube-scheduler kubectl
+    
+  mv kube-apiserver \
+    kube-controller-manager \
+    kube-scheduler kubectl \
+    /usr/local/bin/
 }
 ```
 
 ### Configure the Kubernetes API Server
 
-```
+```bash
 {
-  sudo mkdir -p /var/lib/kubernetes/
+  mkdir -p /var/lib/kubernetes/
 
+<<<<<<< HEAD
   sudo cp ca.crt ca.key kube-apiserver.crt kube-apiserver.key \
     service-account.key service-account.crt \
     etcd-server.key etcd-server.crt \
@@ -112,18 +147,39 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
+=======
+  mv ca.crt ca.key \
+    kube-api-server.key kube-api-server.crt \
+    service-accounts.key service-accounts.crt \
+    encryption-config.yaml \
+    /var/lib/kubernetes/
+}
+```
+
+Create the `kube-apiserver.service` systemd unit file:
+
+```bash
+mv kube-apiserver.service \
+  /etc/systemd/system/kube-apiserver.service
+>>>>>>> upstream/master
 ```
 
 ### Configure the Kubernetes Controller Manager
 
 Copy the `kube-controller-manager` kubeconfig into place:
 
+<<<<<<< HEAD
 ```
 sudo cp kube-controller-manager.kubeconfig /var/lib/kubernetes/
+=======
+```bash
+mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
+>>>>>>> upstream/master
 ```
 
 Create the `kube-controller-manager.service` systemd unit file:
 
+<<<<<<< HEAD
 ```
 cat <<EOF | sudo tee /etc/systemd/system/kube-controller-manager.service
 [Unit]
@@ -150,18 +206,34 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
+=======
+```bash
+mv kube-controller-manager.service /etc/systemd/system/
+>>>>>>> upstream/master
 ```
 
 ### Configure the Kubernetes Scheduler
 
 Copy the `kube-scheduler` kubeconfig into place:
 
+<<<<<<< HEAD
 ```
 sudo cp kube-scheduler.kubeconfig /var/lib/kubernetes/
+=======
+```bash
+mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+```
+
+Create the `kube-scheduler.yaml` configuration file:
+
+```bash
+mv kube-scheduler.yaml /etc/kubernetes/config/
+>>>>>>> upstream/master
 ```
 
 Create the `kube-scheduler.service` systemd unit file:
 
+<<<<<<< HEAD
 ```
 cat <<EOF | sudo tee /etc/systemd/system/kube-scheduler.service
 [Unit]
@@ -180,15 +252,23 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
+=======
+```bash
+mv kube-scheduler.service /etc/systemd/system/
+>>>>>>> upstream/master
 ```
 
 ### Start the Controller Services
 
-```
+```bash
 {
-  sudo systemctl daemon-reload
-  sudo systemctl enable kube-apiserver kube-controller-manager kube-scheduler
-  sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
+  systemctl daemon-reload
+  
+  systemctl enable kube-apiserver \
+    kube-controller-manager kube-scheduler
+    
+  systemctl start kube-apiserver \
+    kube-controller-manager kube-scheduler
 }
 ```
 
@@ -197,11 +277,15 @@ EOF
 
 ### Verification
 
-```
-kubectl get componentstatuses --kubeconfig admin.kubeconfig
+```bash
+kubectl cluster-info \
+  --kubeconfig admin.kubeconfig
 ```
 
+```text
+Kubernetes control plane is running at https://127.0.0.1:6443
 ```
+<<<<<<< HEAD
 NAME                 STATUS    MESSAGE              ERROR
 controller-manager   Healthy   ok
 scheduler            Healthy   ok
@@ -245,29 +329,65 @@ EOF
 
 ```
 loadbalancer# sudo service haproxy restart
+=======
+
+## RBAC for Kubelet Authorization
+
+In this section you will configure RBAC permissions to allow the Kubernetes API Server to access the Kubelet API on each worker node. Access to the Kubelet API is required for retrieving metrics, logs, and executing commands in pods.
+
+> This tutorial sets the Kubelet `--authorization-mode` flag to `Webhook`. Webhook mode uses the [SubjectAccessReview](https://kubernetes.io/docs/admin/authorization/#checking-api-access) API to determine authorization.
+
+The commands in this section will affect the entire cluster and only need to be run on the controller node.
+
+```bash
+ssh root@server
+```
+
+Create the `system:kube-apiserver-to-kubelet` [ClusterRole](https://kubernetes.io/docs/admin/authorization/rbac/#role-and-clusterrole) with permissions to access the Kubelet API and perform most common tasks associated with managing pods:
+
+```bash
+kubectl apply -f kube-apiserver-to-kubelet.yaml \
+  --kubeconfig admin.kubeconfig
+>>>>>>> upstream/master
 ```
 
 ### Verification
 
+<<<<<<< HEAD
 Make a HTTP request for the Kubernetes version info:
 
 ```
 curl  https://192.168.5.30:6443/version -k
+=======
+At this point the Kubernetes control plane is up and running. Run the following commands from the `jumpbox` machine to verify it's working:
+
+Make a HTTP request for the Kubernetes version info:
+
+```bash
+curl -k --cacert ca.crt https://server.kubernetes.local:6443/version
+>>>>>>> upstream/master
 ```
 
-> output
-
-```
+```text
 {
   "major": "1",
+<<<<<<< HEAD
   "minor": "13",
   "gitVersion": "v1.13.0",
   "gitCommit": "ddf47ac13c1a9483ea035a79cd7c10005ff21a6d",
   "gitTreeState": "clean",
   "buildDate": "2018-12-03T20:56:12Z",
   "goVersion": "go1.11.2",
+=======
+  "minor": "28",
+  "gitVersion": "v1.28.3",
+  "gitCommit": "a8a1abc25cad87333840cd7d54be2efaf31a3177",
+  "gitTreeState": "clean",
+  "buildDate": "2023-10-18T11:33:18Z",
+  "goVersion": "go1.20.10",
+>>>>>>> upstream/master
   "compiler": "gc",
-  "platform": "linux/amd64"
+  "platform": "linux/arm64"
 }
 ```
 

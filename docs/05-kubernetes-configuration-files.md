@@ -4,6 +4,7 @@ In this lab you will generate [Kubernetes configuration files](https://kubernete
 
 ## Client Authentication Configs
 
+<<<<<<< HEAD
 In this section you will generate kubeconfig files for the `controller manager`, `kube-proxy`, `scheduler` clients and the `admin` user.
 
 ### Kubernetes Public IP Address
@@ -12,18 +13,63 @@ Each kubeconfig requires a Kubernetes API Server to connect to. To support high 
 
 ```
 LOADBALANCER_ADDRESS=192.168.5.30
+=======
+In this section you will generate kubeconfig files for the `kubelet` and the `admin` user.
+
+### The kubelet Kubernetes Configuration File
+
+When generating kubeconfig files for Kubelets the client certificate matching the Kubelet's node name must be used. This will ensure Kubelets are properly authorized by the Kubernetes [Node Authorizer](https://kubernetes.io/docs/admin/authorization/node/).
+
+> The following commands must be run in the same directory used to generate the SSL certificates during the [Generating TLS Certificates](04-certificate-authority.md) lab.
+
+Generate a kubeconfig file the node-0 worker node:
+
+```bash
+for host in node-0 node-1; do
+  kubectl config set-cluster kubernetes-the-hard-way \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=${host}.kubeconfig
+
+  kubectl config set-credentials system:node:${host} \
+    --client-certificate=${host}.crt \
+    --client-key=${host}.key \
+    --embed-certs=true \
+    --kubeconfig=${host}.kubeconfig
+
+  kubectl config set-context default \
+    --cluster=kubernetes-the-hard-way \
+    --user=system:node:${host} \
+    --kubeconfig=${host}.kubeconfig
+
+  kubectl config use-context default \
+    --kubeconfig=${host}.kubeconfig
+done
+```
+
+Results:
+
+```text
+node-0.kubeconfig
+node-1.kubeconfig
+>>>>>>> upstream/master
 ```
 
 ### The kube-proxy Kubernetes Configuration File
 
 Generate a kubeconfig file for the `kube-proxy` service:
 
-```
+```bash
 {
   kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=ca.crt \
     --embed-certs=true \
+<<<<<<< HEAD
     --server=https://${LOADBALANCER_ADDRESS}:6443 \
+=======
+    --server=https://server.kubernetes.local:6443 \
+>>>>>>> upstream/master
     --kubeconfig=kube-proxy.kubeconfig
 
   kubectl config set-credentials system:kube-proxy \
@@ -37,13 +83,14 @@ Generate a kubeconfig file for the `kube-proxy` service:
     --user=system:kube-proxy \
     --kubeconfig=kube-proxy.kubeconfig
 
-  kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
+  kubectl config use-context default \
+    --kubeconfig=kube-proxy.kubeconfig
 }
 ```
 
 Results:
 
-```
+```text
 kube-proxy.kubeconfig
 ```
 
@@ -53,12 +100,12 @@ Reference docs for kube-proxy [here](https://kubernetes.io/docs/reference/comman
 
 Generate a kubeconfig file for the `kube-controller-manager` service:
 
-```
+```bash
 {
   kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=ca.crt \
     --embed-certs=true \
-    --server=https://127.0.0.1:6443 \
+    --server=https://server.kubernetes.local:6443 \
     --kubeconfig=kube-controller-manager.kubeconfig
 
   kubectl config set-credentials system:kube-controller-manager \
@@ -72,13 +119,14 @@ Generate a kubeconfig file for the `kube-controller-manager` service:
     --user=system:kube-controller-manager \
     --kubeconfig=kube-controller-manager.kubeconfig
 
-  kubectl config use-context default --kubeconfig=kube-controller-manager.kubeconfig
+  kubectl config use-context default \
+    --kubeconfig=kube-controller-manager.kubeconfig
 }
 ```
 
 Results:
 
-```
+```text
 kube-controller-manager.kubeconfig
 ```
 
@@ -88,12 +136,12 @@ Reference docs for kube-controller-manager [here](https://kubernetes.io/docs/ref
 
 Generate a kubeconfig file for the `kube-scheduler` service:
 
-```
+```bash
 {
   kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=ca.crt \
     --embed-certs=true \
-    --server=https://127.0.0.1:6443 \
+    --server=https://server.kubernetes.local:6443 \
     --kubeconfig=kube-scheduler.kubeconfig
 
   kubectl config set-credentials system:kube-scheduler \
@@ -107,13 +155,14 @@ Generate a kubeconfig file for the `kube-scheduler` service:
     --user=system:kube-scheduler \
     --kubeconfig=kube-scheduler.kubeconfig
 
-  kubectl config use-context default --kubeconfig=kube-scheduler.kubeconfig
+  kubectl config use-context default \
+    --kubeconfig=kube-scheduler.kubeconfig
 }
 ```
 
 Results:
 
-```
+```text
 kube-scheduler.kubeconfig
 ```
 
@@ -123,7 +172,7 @@ Reference docs for kube-scheduler [here](https://kubernetes.io/docs/reference/co
 
 Generate a kubeconfig file for the `admin` user:
 
-```
+```bash
 {
   kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=ca.crt \
@@ -142,16 +191,18 @@ Generate a kubeconfig file for the `admin` user:
     --user=admin \
     --kubeconfig=admin.kubeconfig
 
-  kubectl config use-context default --kubeconfig=admin.kubeconfig
+  kubectl config use-context default \
+    --kubeconfig=admin.kubeconfig
 }
 ```
 
 Results:
 
-```
+```text
 admin.kubeconfig
 ```
 
+<<<<<<< HEAD
 Reference docs for kubeconfig [here](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 
 ##
@@ -172,6 +223,31 @@ Copy the appropriate `admin.kubeconfig`, `kube-controller-manager` and `kube-sch
 for instance in master-1 master-2; do
   scp admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig ${instance}:~/
 done
+=======
+## Distribute the Kubernetes Configuration Files
+
+Copy the `kubelet` and `kube-proxy` kubeconfig files to the node-0 instance:
+
+```bash
+for host in node-0 node-1; do
+  ssh root@$host "mkdir /var/lib/{kube-proxy,kubelet}"
+  
+  scp kube-proxy.kubeconfig \
+    root@$host:/var/lib/kube-proxy/kubeconfig \
+  
+  scp ${host}.kubeconfig \
+    root@$host:/var/lib/kubelet/kubeconfig
+done
+```
+
+Copy the `kube-controller-manager` and `kube-scheduler` kubeconfig files to the controller instance:
+
+```bash
+scp admin.kubeconfig \
+  kube-controller-manager.kubeconfig \
+  kube-scheduler.kubeconfig \
+  root@server:~/
+>>>>>>> upstream/master
 ```
 
 Next: [Generating the Data Encryption Config and Key](06-data-encryption-keys.md)

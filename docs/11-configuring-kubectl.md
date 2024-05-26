@@ -2,22 +2,50 @@
 
 In this lab you will generate a kubeconfig file for the `kubectl` command line utility based on the `admin` user credentials.
 
-> Run the commands in this lab from the same directory used to generate the admin client certificates.
+> Run the commands in this lab from the `jumpbox` machine.
 
 ## The Admin Kubernetes Configuration File
 
-Each kubeconfig requires a Kubernetes API Server to connect to. To support high availability the IP address assigned to the external load balancer fronting the Kubernetes API Servers will be used.
+Each kubeconfig requires a Kubernetes API Server to connect to.
+
+You should be able to ping `server.kubernetes.local` based on the `/etc/hosts` DNS entry from a previous lap.
+
+```bash
+curl -k --cacert ca.crt \
+  https://server.kubernetes.local:6443/version
+```
+
+```text
+{
+  "major": "1",
+  "minor": "28",
+  "gitVersion": "v1.28.3",
+  "gitCommit": "a8a1abc25cad87333840cd7d54be2efaf31a3177",
+  "gitTreeState": "clean",
+  "buildDate": "2023-10-18T11:33:18Z",
+  "goVersion": "go1.20.10",
+  "compiler": "gc",
+  "platform": "linux/arm64"
+}
+```
 
 Generate a kubeconfig file suitable for authenticating as the `admin` user:
 
-```
+```bash
 {
+<<<<<<< HEAD:docs/11-configuring-kubectl.md
   KUBERNETES_LB_ADDRESS=192.168.5.30
 
   kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=ca.crt \
     --embed-certs=true \
     --server=https://${KUBERNETES_LB_ADDRESS}:6443
+=======
+  kubectl config set-cluster kubernetes-the-hard-way \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443
+>>>>>>> upstream/master:docs/10-configuring-kubectl.md
 
   kubectl config set-credentials admin \
     --client-certificate=admin.crt \
@@ -30,17 +58,20 @@ Generate a kubeconfig file suitable for authenticating as the `admin` user:
   kubectl config use-context kubernetes-the-hard-way
 }
 ```
+The results of running the command above should create a kubeconfig file in the default location `~/.kube/config` used by the  `kubectl` commandline tool. This also means you can run the `kubectl` command without specifying a config.
+
 
 Reference doc for kubectl config [here](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 
 ## Verification
 
-Check the health of the remote Kubernetes cluster:
+Check the version of the remote Kubernetes cluster:
 
-```
-kubectl get componentstatuses
+```bash
+kubectl version
 ```
 
+<<<<<<< HEAD:docs/11-configuring-kubectl.md
 > output
 
 ```
@@ -49,20 +80,30 @@ controller-manager   Healthy   ok
 scheduler            Healthy   ok
 etcd-1               Healthy   {"health":"true"}
 etcd-0               Healthy   {"health":"true"}
+=======
+```text
+Client Version: v1.28.3
+Kustomize Version: v5.0.4-0.20230601165947-6ce0bf390ce3
+Server Version: v1.28.3
+>>>>>>> upstream/master:docs/10-configuring-kubectl.md
 ```
 
 List the nodes in the remote Kubernetes cluster:
 
-```
+```bash
 kubectl get nodes
 ```
 
-> output
-
 ```
+<<<<<<< HEAD:docs/11-configuring-kubectl.md
 NAME       STATUS   ROLES    AGE    VERSION
 worker-1   NotReady    <none>   118s   v1.13.0
 worker-2   NotReady    <none>   118s   v1.13.0
+=======
+NAME     STATUS   ROLES    AGE   VERSION
+node-0   Ready    <none>   30m   v1.28.3
+node-1   Ready    <none>   35m   v1.28.3
+>>>>>>> upstream/master:docs/10-configuring-kubectl.md
 ```
 
 Note: It is OK for the worker node to be in a `NotReady` state. Worker nodes will come into `Ready` state once networking is configured.

@@ -1,5 +1,6 @@
 # Provisioning a CA and Generating TLS Certificates
 
+<<<<<<< HEAD
 In this lab you will provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) using the popular openssl tool, then use it to bootstrap a Certificate Authority, and generate TLS certificates for the following components: etcd, kube-apiserver, kube-controller-manager, kube-scheduler, kubelet, and kube-proxy.
 
 # Where to do these?
@@ -8,14 +9,28 @@ You can do these on any machine with `openssl` on it. But you should be able to 
 
 In our case we do it on the master-1 node, as we have set it up to be the administrative client.
 
+=======
+In this lab you will provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) using openssl to bootstrap a Certificate Authority, and generate TLS certificates for the following components: kube-apiserver, kube-controller-manager, kube-scheduler, kubelet, and kube-proxy. The commands in this section should be run from the `jumpbox`.
+>>>>>>> upstream/master
 
 ## Certificate Authority
 
-In this section you will provision a Certificate Authority that can be used to generate additional TLS certificates.
+In this section you will provision a Certificate Authority that can be used to generate additional TLS certificates for the other Kubernetes components. Setting up CA and generating certificates using `openssl` can be time-consuming, especially when doing it for the first time. To streamline this lab, I've included an openssl configuration file `ca.conf`, which defines all the details needed to generate certificates for each Kubernetes component. 
+
+Take a moment to review the `ca.conf` configuration file:
+
+```bash
+cat ca.conf
+```
+
+You don't need to understand everything in the `ca.conf` file to complete this tutorial, but you should consider it a starting point for learning `openssl` and the configuration that goes into managing certificates at a high level.
+
+Every certificate authority starts with a private key and root certificate. In this section we are going to create a self-signed certificate authority, and while that's all we need for this tutorial, this shouldn't be considered something you would do in a real-world production level environment. 
 
 Create a CA certificate, then generate a Certificate Signing Request and use it to create a private key:
 
 
+<<<<<<< HEAD
 ```
 # Create private key for CA
 openssl genrsa -out ca.key 2048
@@ -28,9 +43,20 @@ openssl req -new -key ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr
 
 # Self sign the csr using its own private key
 openssl x509 -req -in ca.csr -signkey ca.key -CAcreateserial  -out ca.crt -days 1000
+=======
+```bash
+{
+  openssl genrsa -out ca.key 4096
+  openssl req -x509 -new -sha512 -noenc \
+    -key ca.key -days 3653 \
+    -config ca.conf \
+    -out ca.crt
+}
+>>>>>>> upstream/master
 ```
 Results:
 
+<<<<<<< HEAD
 ```
 ca.crt
 ca.key
@@ -43,11 +69,19 @@ You will use the ca.crt file in many places, so it will be copied to many places
 The ca.key is used by the CA for signing certificates. And it should be securely stored. In this case our master node(s) is our CA server as well, so we will store it on master node(s). There is not need to copy this file to elsewhere.
 
 ## Client and Server Certificates
+=======
+```txt
+ca.crt ca.key
+```
+
+## Create Client and Server Certificates
+>>>>>>> upstream/master
 
 In this section you will generate client and server certificates for each Kubernetes component and a client certificate for the Kubernetes `admin` user.
 
-### The Admin Client Certificate
+Generate the certificates and private keys:
 
+<<<<<<< HEAD
 Generate the `admin` client certificate and private key:
 
 ```
@@ -235,9 +269,64 @@ service-account.crt
 
 
 ## Distribute the Certificates
+=======
+```bash
+certs=(
+  "admin" "node-0" "node-1"
+  "kube-proxy" "kube-scheduler"
+  "kube-controller-manager"
+  "kube-api-server"
+  "service-accounts"
+)
+```
 
-Copy the appropriate certificates and private keys to each controller instance:
+```bash
+for i in ${certs[*]}; do
+  openssl genrsa -out "${i}.key" 4096
 
+  openssl req -new -key "${i}.key" -sha256 \
+    -config "ca.conf" -section ${i} \
+    -out "${i}.csr"
+  
+  openssl x509 -req -days 3653 -in "${i}.csr" \
+    -copy_extensions copyall \
+    -sha256 -CA "ca.crt" \
+    -CAkey "ca.key" \
+    -CAcreateserial \
+    -out "${i}.crt"
+done
+```
+
+The results of running the above command will generate a private key, certificate request, and signed SSL certificate for each of the Kubernetes components. You can list the generated files with the following command:
+
+```bash
+ls -1 *.crt *.key *.csr
+```
+
+## Distribute the Client and Server Certificates
+
+In this section you will copy the various certificates to each machine under a directory that each Kubernetes components will search for the certificate pair. In a real-world environment these certificates should be treated like a set of sensitive secrets as they are often used as credentials by the Kubernetes components to authenticate to each other.
+
+Copy the appropriate certificates and private keys to the `node-0` and `node-1` machines:
+
+```bash
+for host in node-0 node-1; do
+  ssh root@$host mkdir /var/lib/kubelet/
+  
+  scp ca.crt root@$host:/var/lib/kubelet/
+    
+  scp $host.crt \
+    root@$host:/var/lib/kubelet/kubelet.crt
+    
+  scp $host.key \
+    root@$host:/var/lib/kubelet/kubelet.key
+done
+```
+>>>>>>> upstream/master
+
+Copy the appropriate certificates and private keys to the `server` machine:
+
+<<<<<<< HEAD
 ```
 for instance in master-1 master-2; do
   scp ca.crt ca.key kube-apiserver.key kube-apiserver.crt \
@@ -245,6 +334,14 @@ for instance in master-1 master-2; do
     etcd-server.key etcd-server.crt \
     ${instance}:~/
 done
+=======
+```bash
+scp \
+  ca.key ca.crt \
+  kube-api-server.key kube-api-server.crt \
+  service-accounts.key service-accounts.crt \
+  root@server:~/
+>>>>>>> upstream/master
 ```
 
 > The `kube-proxy`, `kube-controller-manager`, `kube-scheduler`, and `kubelet` client certificates will be used to generate client authentication configuration files in the next lab. These certificates will be embedded into the client authentication configuration files. We will then copy those configuration files to the other master nodes.

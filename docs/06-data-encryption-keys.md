@@ -8,36 +8,30 @@ In this lab you will generate an encryption key and an [encryption config](https
 
 Generate an encryption key:
 
-```
-ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
+```bash
+export ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 ```
 
 ## The Encryption Config File
 
 Create the `encryption-config.yaml` encryption config file:
 
-```
-cat > encryption-config.yaml <<EOF
-kind: EncryptionConfig
-apiVersion: v1
-resources:
-  - resources:
-      - secrets
-    providers:
-      - aescbc:
-          keys:
-            - name: key1
-              secret: ${ENCRYPTION_KEY}
-      - identity: {}
-EOF
+```bash
+envsubst < configs/encryption-config.yaml \
+  > encryption-config.yaml
 ```
 
 Copy the `encryption-config.yaml` encryption config file to each controller instance:
 
+<<<<<<< HEAD
 ```
 for instance in master-1 master-2; do
   scp encryption-config.yaml ${instance}:~/
 done
+=======
+```bash
+scp encryption-config.yaml root@server:~/
+>>>>>>> upstream/master
 ```
 
 Move `encryption-config.yaml` encryption config file to appropriate directory.

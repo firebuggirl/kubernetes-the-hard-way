@@ -1,5 +1,6 @@
 # Bootstrapping the etcd Cluster
 
+<<<<<<< HEAD
 Kubernetes components are stateless and store cluster state in [etcd](https://github.com/coreos/etcd). In this lab you will bootstrap a two node etcd cluster and configure it for high availability and secure remote access.
 
 ## Prerequisites
@@ -15,25 +16,45 @@ The commands in this lab must be run on each controller instance: `master-1`, an
 ### Download and Install the etcd Binaries
 
 Download the official etcd release binaries from the [coreos/etcd](https://github.com/coreos/etcd) GitHub project:
+=======
+Kubernetes components are stateless and store cluster state in [etcd](https://github.com/etcd-io/etcd). In this lab you will bootstrap a three node etcd cluster and configure it for high availability and secure remote access.
 
+## Prerequisites
+
+Copy `etcd` binaries and systemd unit files to the `server` instance:
+
+```bash
+scp \
+  downloads/etcd-v3.4.27-linux-arm64.tar.gz \
+  units/etcd.service \
+  root@server:~/
 ```
-wget -q --show-progress --https-only --timestamping \
-  "https://github.com/coreos/etcd/releases/download/v3.3.9/etcd-v3.3.9-linux-amd64.tar.gz"
+
+The commands in this lab must be run on the `server` machine. Login to the `server` machine using the `ssh` command. Example:
+>>>>>>> upstream/master
+
+```bash
+ssh root@server
 ```
+
+## Bootstrapping an etcd Cluster
+
+### Install the etcd Binaries
 
 Extract and install the `etcd` server and the `etcdctl` command line utility:
 
-```
+```bash
 {
-  tar -xvf etcd-v3.3.9-linux-amd64.tar.gz
-  sudo mv etcd-v3.3.9-linux-amd64/etcd* /usr/local/bin/
+  tar -xvf etcd-v3.4.27-linux-arm64.tar.gz
+  mv etcd-v3.4.27-linux-arm64/etcd* /usr/local/bin/
 }
 ```
 
 ### Configure the etcd Server
 
-```
+```bash
 {
+<<<<<<< HEAD
   sudo mkdir -p /etc/etcd /var/lib/etcd
   sudo cp ca.crt etcd-server.key etcd-server.crt /etc/etcd/
 }
@@ -45,14 +66,20 @@ The instance internal IP address will be used to serve client requests and commu
 INTERNAL_IP=$(ip addr show enp0s8 | grep "inet " | awk '{print $2}' | cut -d / -f 1)
 ```
 
-Each etcd member must have a unique name within an etcd cluster. Set the etcd name to match the hostname of the current compute instance:
+=======
+  mkdir -p /etc/etcd /var/lib/etcd
+  chmod 700 /var/lib/etcd
+  cp ca.crt kube-api-server.key kube-api-server.crt \
+    /etc/etcd/
+}
+```
 
-```
-ETCD_NAME=$(hostname -s)
-```
+>>>>>>> upstream/master
+Each etcd member must have a unique name within an etcd cluster. Set the etcd name to match the hostname of the current compute instance:
 
 Create the `etcd.service` systemd unit file:
 
+<<<<<<< HEAD
 ```
 cat <<EOF | sudo tee /etc/systemd/system/etcd.service
 [Unit]
@@ -84,24 +111,32 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
+=======
+```bash
+mv etcd.service /etc/systemd/system/
+>>>>>>> upstream/master
 ```
 
 ### Start the etcd Server
 
-```
+```bash
 {
-  sudo systemctl daemon-reload
-  sudo systemctl enable etcd
-  sudo systemctl start etcd
+  systemctl daemon-reload
+  systemctl enable etcd
+  systemctl start etcd
 }
 ```
 
+<<<<<<< HEAD
 > Remember to run the above commands on each controller node: `master-1`, and `master-2`.
 
+=======
+>>>>>>> upstream/master
 ## Verification
 
 List the etcd cluster members:
 
+<<<<<<< HEAD
 ```
 sudo ETCDCTL_API=3 etcdctl member list \
   --endpoints=https://127.0.0.1:2379 \
@@ -115,6 +150,14 @@ sudo ETCDCTL_API=3 etcdctl member list \
 ```
 45bf9ccad8d8900a, started, master-2, https://192.168.5.12:2380, https://192.168.5.12:2379
 54a5796a6803f252, started, master-1, https://192.168.5.11:2380, https://192.168.5.11:2379
+=======
+```bash
+etcdctl member list
+```
+
+```text
+6702b0a34e2cfd39, started, controller, http://127.0.0.1:2380, http://127.0.0.1:2379, false
+>>>>>>> upstream/master
 ```
 
 Reference: https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#starting-etcd-clusters
